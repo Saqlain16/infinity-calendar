@@ -14,7 +14,6 @@
 
 <style>
   :root {
-    /* Default Light Mode Variables */
     --ink:        #232C36;
     --ink-soft:   #5b6572;
     --paper:      #EDEAE0;
@@ -32,7 +31,6 @@
     --modal-bg: rgba(35,44,54,0.4);
   }
 
-  /* Explicit Dark Mode Overrides */
   html[data-theme="dark"] {
     --ink:        #f1f5f9;
     --ink-soft:   #94a3b8;
@@ -125,11 +123,29 @@
   }
 
   .toolbar-row{ display:flex; flex-wrap: wrap; gap: 10px; align-items:center; margin-bottom: 16px; }
+  
+  /* --- New Search Wrapper --- */
+  .search-wrapper { position: relative; flex: 1; min-width: 200px; }
   .search-input{
-    flex: 1; min-width: 140px; font-family:'IBM Plex Sans'; font-size: 13px;
+    width: 100%; font-family:'IBM Plex Sans'; font-size: 13px;
     padding: 8px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper);
-    color: var(--ink);
+    color: var(--ink); outline: none;
   }
+  .search-input:focus { border-color: var(--ink-soft); }
+  .search-dropdown {
+    position: absolute; top: 100%; left: 0; right: 0; background: var(--paper-raised);
+    border: 1px solid var(--line); border-radius: 4px; box-shadow: var(--shadow);
+    max-height: 250px; overflow-y: auto; z-index: 1000; display: none; margin-top: 4px;
+  }
+  .search-dropdown.show { display: block; }
+  .search-item {
+    padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--line);
+    font-size: 13px; display: flex; align-items: center; gap: 8px; color: var(--ink);
+  }
+  .search-item:last-child { border-bottom: none; }
+  .search-item:hover { background: var(--paper); }
+  .search-item .subtext { font-size: 11px; color: var(--ink-soft); margin-left: auto; }
+
   .select-input{
     font-family:'IBM Plex Sans'; font-size: 13px; padding: 8px 10px; border: 1px solid var(--line);
     border-radius: 5px; background: var(--paper); color: var(--ink);
@@ -179,7 +195,6 @@
   .fc-list-event-dot{ display:none !important; }
   .fc-list-day-cushion{ background: var(--paper) !important; font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color: var(--ink); }
 
-  /* Styles for the "+X more" popover */
   .fc-popover { background: var(--paper-raised) !important; border: 1px solid var(--line) !important; box-shadow: var(--shadow) !important; border-radius: 6px; }
   .fc-popover-header { background: var(--paper) !important; color: var(--ink) !important; font-family: 'IBM Plex Sans', sans-serif; padding: 8px; border-radius: 6px 6px 0 0; }
   .fc-popover-body { padding: 8px !important; }
@@ -221,7 +236,7 @@
   .upcoming-badge.later{ background: transparent; color: var(--ink-soft); border:1px solid var(--line); }
   .empty-msg{ font-size: 12px; color: var(--ink-soft); padding: 14px 4px; text-align:center; }
 
-  /* --- Desktop Hover Card --- */
+  /* Desktop Hover Card */
   #hover-card{
     position: fixed; z-index: 999; width: 250px; background: var(--paper-raised);
     border: 1px solid var(--ink); border-radius: 4px 10px 10px 4px; box-shadow: var(--shadow);
@@ -234,7 +249,7 @@
   #hover-card .hc-row .k{ color: var(--ink-soft); }
   #hover-card .hc-row .v{ font-weight: 500; text-align:right; color: var(--ink); }
 
-  /* --- Mobile/Touch Friendly Modal --- */
+  /* Mobile/Touch Friendly Modal */
   #modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: var(--modal-bg); backdrop-filter: blur(2px);
@@ -258,7 +273,7 @@
 
   footer.note{ text-align:center; font-size: 11px; color: var(--ink-soft); margin-top: 22px; font-family:'IBM Plex Mono', monospace; }
 
-  /* --- Notification bell --- */
+  /* Notification bell */
   .bell-wrap{ position: relative; }
   .bell-btn{
     position: relative; width: 38px; height: 38px; border-radius: 50%;
@@ -299,7 +314,6 @@
   .notif-footer-btn:hover{ background: var(--paper-raised); }
   .notif-footer-btn.granted{ color: var(--teal); border-color: var(--teal); }
 
-  /* --- Print Friendly Styling --- */
   @media print {
     body { background: #fff !important; color: #000 !important; }
     .wrap { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
@@ -310,10 +324,7 @@
     .fc-event { border: 1px solid #aaa !important; background: #f9f9f9 !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .fc-event .mini-avatar { border: 1px solid #333; color: #333; background: transparent !important; }
   }
-
-  @media (max-width: 640px){
-    h1{ font-size: 26px; }
-  }
+  @media (max-width: 640px){ h1{ font-size: 26px; } }
 </style>
 </head>
 <body>
@@ -356,7 +367,12 @@
   <div class="layout">
     <div id="calendar-card">
       <div class="toolbar-row">
-        <input type="text" class="search-input" id="search-input" placeholder="Search by name…">
+        <!-- New Search Autocomplete HTML -->
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="search-input" placeholder="Search by name to find birthday…" autocomplete="off">
+          <div id="search-dropdown" class="search-dropdown"></div>
+        </div>
+        
         <select class="select-input" id="branch-select"><option value="">All branches</option></select>
         <span class="chip birthday active" data-type="birthday"><i class="dot"></i>Birthdays</span>
         <div class="view-toggle">
@@ -391,7 +407,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // --- Theme Logic ---
   const themeToggle = document.getElementById('theme-toggle');
-  // Default to dark mode unless they previously saved "light"
   const currentTheme = localStorage.getItem('theme') || 'dark'; 
   document.documentElement.setAttribute('data-theme', currentTheme);
   themeToggle.textContent = currentTheme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
@@ -411,6 +426,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const modalContent = document.getElementById('modal-content');
   const syncStatus = document.getElementById('sync-status');
   const calendarEl = document.getElementById('calendar');
+  
+  // Search Elements
+  const searchInput = document.getElementById('search-input');
+  const searchDropdown = document.getElementById('search-dropdown');
+
   let calendar = null;
   let masterEvents = [];   
   let employees = [];      
@@ -426,13 +446,11 @@ document.addEventListener('DOMContentLoaded', function() {
     return name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
   }
 
-  // --- UPDATED to accept DD-MM-YYYY or DD/MM/YYYY ---
   function parseDate(str) {
     if (!str) return null;
     const s = String(str).trim();
     const m = s.match(/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/);
     if (!m) return null;
-    // Note: m[1] is DD, m[2] is MM, m[3] is YYYY
     const d = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1]));
     if (isNaN(d.getTime())) return null;
     return { year: +m[3], month: +m[2], day: +m[1] };
@@ -443,14 +461,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (month === 2 && day === 29 && !isLeap(year)) { month = 3; day = 1; }
     const mm = String(month).padStart(2, '0');
     const dd = String(day).padStart(2, '0');
-    return `${year}-${mm}-${dd}`; // FullCalendar strictly requires YYYY-MM-DD internally
+    return `${year}-${mm}-${dd}`;
   }
   
   function formatDateDisplay(ymdStr) {
     if (!ymdStr) return '';
     const parts = ymdStr.split('-');
     if (parts.length !== 3) return ymdStr;
-    return `${parts[2]}-${parts[1]}-${parts[0]}`; // Converts internal YYYY-MM-DD to DD-MM-YYYY for display
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
   }
 
   function buildEvents(rows) {
@@ -513,17 +531,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function currentFilters() {
     return {
-      search: document.getElementById('search-input').value.trim().toLowerCase(),
       branch: document.getElementById('branch-select').value
     };
   }
 
   function applyFilters() {
     const f = currentFilters();
+    // Notice search text no longer actively filters the whole calendar out of view.
     const filtered = masterEvents.filter(e => {
       if (!activeTypes.has(e.extendedProps.type)) return false;
       if (f.branch && e.extendedProps.branch !== f.branch) return false;
-      if (f.search && !e.extendedProps.name.toLowerCase().includes(f.search)) return false;
       return true;
     });
     calendar.removeAllEvents();
@@ -531,6 +548,81 @@ document.addEventListener('DOMContentLoaded', function() {
     renderUpcoming(filtered);
     updateStats(filtered, calendar.view);
   }
+
+  // --- New Search Bar Jump Logic ---
+  searchInput.addEventListener('input', (e) => {
+    const val = e.target.value.toLowerCase().trim();
+    if (!val) {
+      searchDropdown.classList.remove('show');
+      return;
+    }
+
+    const matches = [];
+    const seen = new Set();
+
+    masterEvents.forEach(ev => {
+      const p = ev.extendedProps;
+      const identifier = p.name + '|' + p.branch; // Keeps users with same names separate
+      
+      if (p.type === 'birthday' && p.name.toLowerCase().includes(val)) {
+        if (!seen.has(identifier)) {
+          seen.add(identifier);
+          matches.push(p);
+        }
+      }
+    });
+
+    if (matches.length > 0) {
+      searchDropdown.innerHTML = matches.map(p => `
+        <div class="search-item" data-name="${p.name}" data-branch="${p.branch}">
+          <span class="mini-avatar" style="background:${p.color}">${p.initials}</span>
+          <span>${p.name}</span>
+          <span class="subtext">${p.branch || ''}</span>
+        </div>
+      `).join('');
+    } else {
+      searchDropdown.innerHTML = `<div class="search-item" style="color: var(--ink-soft); cursor: default;">No results found</div>`;
+    }
+    searchDropdown.classList.add('show');
+  });
+
+  searchDropdown.addEventListener('click', (e) => {
+    const item = e.target.closest('.search-item');
+    if (!item || !item.dataset.name) return;
+
+    const name = item.dataset.name;
+    const branch = item.dataset.branch;
+    
+    searchInput.value = ''; 
+    searchDropdown.classList.remove('show');
+
+    // Find their next birthday
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    
+    const personEvents = masterEvents.filter(ev => ev.extendedProps.name === name && ev.extendedProps.branch === branch && ev.extendedProps.type === 'birthday');
+    personEvents.sort((a,b) => new Date(a.start) - new Date(b.start));
+
+    let nextEvent = personEvents.find(ev => new Date(ev.start) >= today);
+    if (!nextEvent && personEvents.length > 0) {
+        nextEvent = personEvents[personEvents.length - 1]; 
+    }
+
+    if (nextEvent) {
+        // Jump to the month
+        calendar.gotoDate(nextEvent.start);
+        // Automatically pop open their modal
+        openModal(nextEvent.extendedProps);
+    }
+  });
+
+  // Hide dropdown if user clicks away
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+      searchDropdown.classList.remove('show');
+    }
+  });
+
 
   /* Hover logic for Desktop */
   function renderHoverCard(props, x, y) {
@@ -584,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
     modalOverlay.style.display = 'block';
     detailModal.style.display = 'block';
     
-    // Hide hover card just in case it popped up during a tap
+    // Hide hover card just in case it popped up
     hoverCard.style.display = 'none'; 
   }
 
@@ -633,7 +725,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const meta = `Turns ${p.age_turning} · ${p.branch || '—'}`;
       const dateLabel = new Date(e.start).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
       return `
-        <div class="upcoming-item">
+        <div class="upcoming-item" style="cursor:pointer;" onclick="calendar.gotoDate('${e.start}');">
           <div class="avatar" style="background:${p.color}">${p.initials}</div>
           <div class="upcoming-info">
             <div class="upcoming-name">🎂 ${p.name}</div>
@@ -733,12 +825,15 @@ document.addEventListener('DOMContentLoaded', function() {
     e.stopPropagation();
     document.getElementById('notif-panel').classList.toggle('open');
   });
+  
+  // Adjusted document click listener for notifications
   document.addEventListener('click', (e) => {
     const panel = document.getElementById('notif-panel');
-    if (panel.classList.contains('open') && !panel.contains(e.target) && e.target.id !== 'bell-btn') {
+    if (panel && panel.classList.contains('open') && !panel.contains(e.target) && e.target.id !== 'bell-btn') {
       panel.classList.remove('open');
     }
   });
+  
   document.getElementById('notif-permission-btn').addEventListener('click', async () => {
     if (!('Notification' in window) || Notification.permission === 'denied') return;
     await Notification.requestPermission();
@@ -755,7 +850,6 @@ document.addEventListener('DOMContentLoaded', function() {
       headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
       events: [],
       eventClick: function(info) {
-        // Trigger click modal strictly on mobile/touch devices (devices that don't support hover)
         if (!window.matchMedia("(hover: hover)").matches) {
           openModal(info.event.extendedProps);
         }
@@ -768,7 +862,6 @@ document.addEventListener('DOMContentLoaded', function() {
           titleEl.innerHTML = `<span class="mini-avatar" style="background:${p.color}">${p.initials}</span><span>${info.event.title}</span>`;
         }
         
-        // Setup Hover Card strictly for Desktop/Mouse users
         if (window.matchMedia("(hover: hover)").matches) {
           info.el.addEventListener('mouseenter', (e) => renderHoverCard(p, e.clientX, e.clientY));
           info.el.addEventListener('mousemove', (e) => positionHoverCard(e.clientX, e.clientY));
@@ -818,7 +911,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  document.getElementById('search-input').addEventListener('input', applyFilters);
   document.getElementById('branch-select').addEventListener('change', applyFilters);
   document.getElementById('refresh-btn').addEventListener('click', () => loadData('Refreshing…'));
 
